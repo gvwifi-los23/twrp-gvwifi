@@ -1,0 +1,17 @@
+# Never commit signing material
+*.jks
+*.keystore
+*.pk8
+*.pem
+*.p12
+keys/
+keys.mk
+*.pass
+# Build output and downloads
+out/
+build/
+*.apk
+*.zip
+*.img
+*.tar
+*.tar.md5

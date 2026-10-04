@@ -1,0 +1,33 @@
+# TWRP for the Galaxy View SM-T670 (gvwifi)
+
+on init
+    # USB: configfs gadget on the s3c_udc_otg controller (same as the LineageOS recovery)
+    setprop sys.usb.configfs 1
+    setprop sys.usb.controller 13580000.usb
+    setprop ro.recovery.usb.vid 04E8
+    setprop ro.recovery.usb.adb.pid 6860
+    setprop ro.recovery.usb.fastboot.pid 6860
+
+    # (/vendor/lib/hw, /system/bin/bootstrap/linker and the VINTF framework manifest are
+    #  added to the ramdisk by build-twrp.sh; doing it here did not take effect)
+
+# Same keymaster and gatekeeper as the ROM: keymaster@3.0-service with its built-in
+# software keymaster (no keystore.* hardware module is present) and the software gatekeeper.
+service keymaster-3-0 /system/bin/android.hardware.keymaster@3.0-service
+    user root
+    group root
+    seclabel u:r:recovery:s0
+    disabled
+
+service gatekeeper-1-0 /system/bin/android.hardware.gatekeeper@1.0-service.software
+    user root
+    group root
+    seclabel u:r:recovery:s0
+    disabled
+
+# TWRP 14.1 sets ro.crypto.state once it has read the fstab, before it initializes the
+# DE keys (it no longer sets crypto.ready, which older TWRP used)
+on property:ro.crypto.state=encrypted
+    start hwservicemanager
+    start keymaster-3-0
+    start gatekeeper-1-0

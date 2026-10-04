@@ -1,0 +1,31 @@
+From 0b788cac8dd34983379d34587ee5ace187d270cc Mon Sep 17 00:00:00 2001
+From: gvwifi build <build@local>
+Date: Sat, 3 Oct 2026 18:17:42 -0400
+Subject: [PATCH] partition: exclude the /data/user/0 bind mount from Data
+ backups
+
+Since Android 14, vold bind-mounts /data/data onto /data/user/0. TWRP archived
+every app's data twice, and restoring failed on the second copy
+(tar_extract_file: failed to extract //data/user/0/<pkg>/).
+
+Change-Id: I575b6f0d21422147c8294db73774ca9b7d5d4e35
+---
+ partition.cpp | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/partition.cpp b/partition.cpp
+index 46285334..e5ecb7e8 100755
+--- a/partition.cpp
++++ b/partition.cpp
+@@ -803,6 +803,11 @@ bool TWPartition::Decrypt_FBE_DE() {
+ 	ExcludeAll(Mount_Point + "/cache");
+ 	ExcludeAll(Mount_Point + "/per_boot"); // removed each boot by init
+ 	ExcludeAll(Mount_Point + "/gsi"); // cow devices
++	// Since Android 14, vold bind-mounts /data/data onto /data/user/0 (an empty
++	// directory on disk; see prepare_special_dirs() in system/vold/FsCrypt.cpp).
++	// Backing it up stores every app's data twice, and restoring the second copy
++	// fails once /data/data has been restored. vold recreates it on every boot.
++	ExcludeAll(Mount_Point + "/user/0");
+ 
+ 	int retry_count = 3;
+ 	while (!android::keystore::Decrypt_DE() && --retry_count)

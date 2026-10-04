@@ -1,0 +1,32 @@
+From d869e7596224ae0e11e543bd9deb2db3c16518ab Mon Sep 17 00:00:00 2001
+From: gvwifi build <build@local>
+Date: Sat, 3 Oct 2026 18:42:46 -0400
+Subject: [PATCH] partition: release the /data/user/0 bind mount before
+ unmounting /data
+
+vold (Android 14+) bind-mounts /data/data onto /data/user/0 during decryption.
+TWRP never unmounted it, so unmounting /data (Format Data, wipes) failed with
+'Device or resource busy'.
+
+Change-Id: If0feea58f302372cd947cbb73d9781d00150488a
+---
+ partition.cpp | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/partition.cpp b/partition.cpp
+index e5ecb7e8..cf390c79 100755
+--- a/partition.cpp
++++ b/partition.cpp
+@@ -1742,6 +1742,12 @@ bool TWPartition::UnMount(bool Display_Error) {
+ 		if (!Symlink_Mount_Point.empty())
+ 			umount(Symlink_Mount_Point.c_str());
+ 
++		// Since Android 14, vold bind-mounts /data/data onto /data/user/0 while
++		// decrypting; that mount keeps /data busy, so Format Data and anything
++		// else that unmounts /data failed with EBUSY.
++		if (Mount_Point == "/data")
++			umount("/data/user/0");
++
+ 		umount(Mount_Point.c_str());
+ 		if (Is_Mounted()) {
+ 			if (Display_Error)

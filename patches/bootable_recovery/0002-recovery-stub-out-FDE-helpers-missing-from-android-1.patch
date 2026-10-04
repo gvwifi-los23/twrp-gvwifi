@@ -1,0 +1,73 @@
+From d142aee6a3d6e8ca63b6fd86cca685a610a0f0b4 Mon Sep 17 00:00:00 2001
+From: gvwifi build <build@local>
+Date: Sat, 3 Oct 2026 11:27:23 -0400
+Subject: [PATCH 2/3] recovery: stub out FDE helpers missing from android-14.1
+ vold
+
+partition.cpp and partitionmanager.cpp still call TWRP's FDE functions under
+TW_INCLUDE_CRYPTO, but only the android-12.1 vold provides them. Report 'no FDE'
+so FBE-only devices build and use the file-based path.
+
+Change-Id: I81e119c2e0aeb1344e08509281f83e10ba17b3d8
+---
+ partition.cpp        |  1 +
+ partitionmanager.cpp |  1 +
+ twrp_fde_stubs.h     | 25 +++++++++++++++++++++++++
+ 3 files changed, 27 insertions(+)
+ create mode 100644 twrp_fde_stubs.h
+
+diff --git a/partition.cpp b/partition.cpp
+index 8c53567e..46285334 100755
+--- a/partition.cpp
++++ b/partition.cpp
+@@ -52,6 +52,7 @@
+ #ifdef TW_INCLUDE_CRYPTO
+ 	// #include "crypto/fde/cryptfs.h"
+ 	#include "cryptfs.h"
++	#include "twrp_fde_stubs.h"
+ 	#include "Decrypt.h"
+ #endif
+ extern "C" {
+diff --git a/partitionmanager.cpp b/partitionmanager.cpp
+index 171feccf..78fcbe42 100755
+--- a/partitionmanager.cpp
++++ b/partitionmanager.cpp
+@@ -105,6 +105,7 @@ extern "C" {
+ #ifdef TW_INCLUDE_FBE_METADATA_DECRYPT
+ 	#ifdef USE_FSCRYPT
+ 	#include "cryptfs.h"
++	#include "twrp_fde_stubs.h"
+ 	#include "fscrypt-common.h"
+ 	#include "MetadataCrypt.h"
+ 	#endif
+diff --git a/twrp_fde_stubs.h b/twrp_fde_stubs.h
+new file mode 100644
+index 00000000..263555e3
+--- /dev/null
++++ b/twrp_fde_stubs.h
+@@ -0,0 +1,25 @@
++/*
++ * Full-disk encryption (FDE) was removed from AOSP vold in 2021. TeamWin restored
++ * TWRP's FDE helpers only in the android-12.1 vold ("cryptfs: Port TWRP's missing
++ * FDE related functions"); android-13 and later vold have none of them, while
++ * partition.cpp and partitionmanager.cpp still call them under TW_INCLUDE_CRYPTO.
++ *
++ * These stubs report "no FDE": no crypto footer, no FDE password, nothing to tear
++ * down, so FBE devices take the file-based path. Signatures match android-12.1 vold.
++ */
++#pragma once
++
++#include <string>
++
++#ifndef CRYPT_TYPE_PASSWORD
++#define CRYPT_TYPE_PASSWORD 0
++#define CRYPT_TYPE_DEFAULT  1
++#define CRYPT_TYPE_PATTERN  2
++#define CRYPT_TYPE_PIN      3
++#endif
++
++static inline void set_partition_data(const char* /*block_device*/, const char* /*key_location*/) {}
++static inline int cryptfs_check_footer() { return -1; }            // no FDE footer
++static inline int cryptfs_get_password_type(void) { return -1; }   // not FDE
++static inline int cryptfs_check_passwd(const char* /*pw*/) { return -1; }
++static inline int delete_crypto_blk_dev(const std::string& /*name*/) { return 0; }
