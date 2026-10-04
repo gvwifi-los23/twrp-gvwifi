@@ -1,0 +1,34 @@
+From 05d045519640bed626c45292b88705718c867d25 Mon Sep 17 00:00:00 2001
+From: gvwifi build <build@local>
+Date: Sun, 4 Oct 2026 15:26:39 -0400
+Subject: [PATCH] abx: read 64-bit ABX values as int64_t, not long
+
+TYPE_LONG / TYPE_LONG_HEX values are 8 bytes in Android Binary XML, but
+the converter read them as `long`, which is 4 bytes on 32-bit userspace
+(the Galaxy View's armv7 recovery). It consumed half of each value and
+lost sync with the rest of the stream, so /data/system/users/0.xml
+(lastLoggedIn, lastEnteredForeground) came out as
+`lastLoggedIn="417"#error: invalid type`, abx_to_xml() returned false,
+TWRP parsed the raw ABX file and showed "Error parsing XML file".
+
+Change-Id: Ieb1b6fe1061c18128fb8be1002eed6fd4b4bece9
+---
+ abx-functions.hpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/abx-functions.hpp b/abx-functions.hpp
+index 003586de..3fb83160 100755
+--- a/abx-functions.hpp
++++ b/abx-functions.hpp
+@@ -253,7 +253,7 @@ private:
+ 				// TODO: output hex instead of dec (what is the exact format?)
+ 			case TYPE_LONG:
+ 				{
+-					int64_t val = read_bswap<long>(m_is);
++					int64_t val = read_bswap<int64_t>(m_is);
+ 					std::stringstream ss;
+ 					ss << val;
+ 					return ss.str();
+-- 
+2.43.0
+

@@ -10,7 +10,7 @@ keymaster 3.0 and gatekeeper as the ROM), Data backup **with** fscrypt policies,
 ```
 # TWRP source:
 # repo init -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp -b twrp-14.1 --depth=1
-KERNEL=<Image built with lineage-gvwifi kernel patch 0012> bash build-twrp.sh
+KERNEL=<Image built with lineage-gvwifi kernel patches 0012 and 0013> bash build-twrp.sh
 ```
 `build-twrp.sh` copies `device_samsung_gvwifi/` into the tree, applies `patches/`, builds, trims the
 ramdisk, and packs a Samsung image (`mkdtbhbootimg`, DT, `SEANDROIDENFORCE`). It refuses to pack when:
@@ -30,8 +30,10 @@ It expects the LineageOS build's kernel, `dt.img` and `mkdtbhbootimg` in `~/gvwi
 | `bootable_recovery/0003` | link libsysutils for libvold |
 | `bootable_recovery/0004` | exclude the `/data/user/0` bind mount from Data backups (it duplicated every app's data) |
 | `bootable_recovery/0005` | release `/data/user/0` before unmounting `/data` (Format Data failed with EBUSY) |
+| `bootable_recovery/0006` | the ABX (binary XML) converter read 64-bit values as `long`, 4 bytes on this 32-bit recovery, so `/data/system/users/0.xml` came out garbled and TWRP showed "Error parsing XML file" at startup |
 | `system_vold/0001` | TeamWin's "dynamically choose fscrypt policy [2/2]" (only on android-12.1), ported to 14.1 |
 | kernel 0012 (in `lineage-gvwifi`) | `FS_IOC_GET_ENCRYPTION_POLICY_EX` was declared but never implemented, so backups lost every policy |
+| kernel 0013 (in `lineage-gvwifi`) | FunctionFS leaked the open adb endpoints whenever adbd stopped, so USB adb could stay offline after an adbd restart |
 
 ## Device-tree notes
 - Same keymaster as the ROM: `keymaster@3.0-service` finds no `keystore.<board>` module and runs its
