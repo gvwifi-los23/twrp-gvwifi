@@ -17,7 +17,8 @@ ramdisk, and packs a Samsung image (`mkdtbhbootimg`, DT, `SEANDROIDENFORCE`). It
 - `ro.build.version.release` / `security_patch` / `ro.vendor.build.security_patch` differ from the ROM
   (16 / 2026-09-01 / empty): the software keymaster stamps keys with them, and a mismatch makes vold
   reject or rewrite key blobs. (Tested 2026-10-14: this TWRP, at 2026-09-01, still decrypts data after
-  the ROM moved to security patch 2026-10-01; the next TWRP build should still match the ROM.)
+  the ROM moved to security patch 2026-10-01. Keep TWRP's value at or below the oldest ROM in use:
+  a TWRP value newer than the ROM's can make vold rewrite key blobs the ROM then rejects.)
 - a shared-library dependency is missing (checked recursively over every ELF);
 - the image doesn't fit S-Boot's load window (the image must end below `0x42000000`).
 

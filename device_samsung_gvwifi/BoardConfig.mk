@@ -55,6 +55,10 @@ TARGET_USES_MKE2FS := true
 #   boot patch     derived from the OS patch
 # A lower value makes the key unusable; a higher one makes vold upgrade and rewrite the
 # key blob, which the ROM then rejects.
+# Tested 2026-10-14: TWRP at 2026-09-01 still decrypts after the ROM moved to 2026-10-01 (the
+# software keymaster accepts keys from a newer OS patch). So keep this value AT OR BELOW the
+# oldest ROM build users may run; never raise it past a ROM that is still in use, or TWRP could
+# rewrite that ROM's key blobs and the ROM would lose access to /data.
 PLATFORM_SECURITY_PATCH := 2026-09-01
 
 # Decryption: file-based encryption v2, no metadata encryption.
