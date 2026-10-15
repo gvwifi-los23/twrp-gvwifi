@@ -10,7 +10,7 @@ keymaster 3.0 and gatekeeper as the ROM), Data backup **with** fscrypt policies,
 ```
 # TWRP source:
 # repo init -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp -b twrp-14.1 --depth=1
-KERNEL=<Image built with lineage-gvwifi kernel patches 0012-0014> bash build-twrp.sh
+KERNEL=<Image built with lineage-gvwifi kernel patches 0012-0017> bash build-twrp.sh
 ```
 `build-twrp.sh` copies `device_samsung_gvwifi/` into the tree, applies `patches/`, builds, trims the
 ramdisk, and packs a Samsung image (`mkdtbhbootimg`, DT, `SEANDROIDENFORCE`). It refuses to pack when:
@@ -35,6 +35,8 @@ It expects the LineageOS build's kernel, `dt.img` and `mkdtbhbootimg` in `~/gvwi
 | kernel 0012 (in `lineage-gvwifi`) | `FS_IOC_GET_ENCRYPTION_POLICY_EX` was declared but never implemented, so backups lost every policy |
 | kernel 0013 (in `lineage-gvwifi`) | FunctionFS leaked the open adb endpoints whenever adbd stopped, so USB adb could stay offline after an adbd restart |
 | kernel 0014 (in `lineage-gvwifi`) | reused inodes kept another file's encryption key or fs-verity state: backups/restores could read files as I/O errors or write them with the wrong key |
+| kernel 0016 (in `lineage-gvwifi`) | warm reboots into TWRP (`adb reboot recovery`) could hang after the Galaxy View logo: junk on UART1 became SysRq commands and SysRq `f` panicked the kernel |
+| kernel 0017 (in `lineage-gvwifi`) | the fuel-gauge driver never released its I2C lock after a firmware read, freezing battery readings |
 
 ## Device-tree notes
 - Same keymaster as the ROM: `keymaster@3.0-service` finds no `keystore.<board>` module and runs its
