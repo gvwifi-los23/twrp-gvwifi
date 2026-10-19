@@ -49,4 +49,14 @@ It expects the LineageOS build's kernel, `dt.img` and `mkdtbhbootimg` in `~/gvwi
 - After **Format Data**, `/cache` (a link to `/data/cache`) points at nothing, so a ROM zip
   install aborts with `E1001: mkdir "/cache/recovery/..." failed`. Create it first:
   `adb shell mkdir -p /data/cache/recovery`, then install.
-- `TW_ROTATION := 180` (the panel is mounted upside down; touch is already upright); MTP excluded.
+- `TW_ROTATION := 180` (the panel is mounted upside down; touch is already upright).
+- **MTP** (since 20261019): Windows shows *SM-T670 > Internal Storage* while adb stays connected.
+  The rules in `init.recovery.samsungexynos7580.rc` use the kernel's configfs `mtp.gs0` (`/dev/mtp_usb`)
+  plus `ffs.adb`, under the ROM's USB IDs (Samsung `04E8:6860`): Windows binds its MTP driver to that
+  composite, but under TWRP's adb IDs (`18D1:D001`) it only set up adb. The rules never unbind USB
+  themselves, because adbd sets `sys.usb.ffs.ready=1` again on every re-enumeration and an unbinding rule
+  loops forever; only the `none` step disconnects (and restores TWRP's IDs). MTP had been excluded
+  until kernel 0011/0013 made USB function switches reliable.
+- Sideload started from the command line (`adb shell twrp sideload`) installs the zip, then TWRP
+  restarts itself (it tries to open the already-closed package a second time). The install is complete;
+  this is not MTP-related.

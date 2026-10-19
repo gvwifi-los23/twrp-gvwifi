@@ -104,9 +104,9 @@ TW_THEME := landscape_hdpi
 # The panel is mounted upside down (the ROM rotates 180 too). TW_ROTATION only rotates the
 # drawing; touch already reports upright coordinates, so no touch flip is needed.
 TW_ROTATION := 180
-# USB dropped once TWRP got past /data (2026-10-03); the configfs setup in
-# init.recovery.samsungexynos7580.rc only defines adb/fastboot, so keep TWRP off MTP.
-TW_EXCLUDE_MTP := true
+# MTP: kernel configfs f_mtp (mtp.gs0 -> /dev/mtp_usb), set up in
+# init.recovery.samsungexynos7580.rc. It was off until 2026-10-19 because USB died on the
+# first function switch; kernel 0011 (reconnect after rebind) and 0013 (FunctionFS reset) fixed that.
 TW_BRIGHTNESS_PATH := "/sys/class/backlight/panel/brightness"
 TW_MAX_BRIGHTNESS := 255
 TW_DEFAULT_BRIGHTNESS := 160

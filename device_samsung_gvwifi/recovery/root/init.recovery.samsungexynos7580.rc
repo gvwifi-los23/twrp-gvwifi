@@ -31,3 +31,32 @@ on property:ro.crypto.state=encrypted
     start hwservicemanager
     start keymaster-3-0
     start gatekeeper-1-0
+
+# MTP + adb (TWRP sets sys.usb.config=mtp,adb when MTP is enabled, always going through
+# sys.usb.config=none first). Same layout as the ROM's init.usb.configfs.rc:
+# f1 = mtp.gs0 (kernel f_mtp, /dev/mtp_usb), f2 = ffs.adb.
+# These rules must be idempotent: adbd sets sys.usb.ffs.ready=1 again every time USB
+# re-enumerates, which re-runs them. Unbinding here (UDC none) restarted that cycle and
+# looped forever; only the none step below disconnects.
+on fs && property:sys.usb.configfs=1
+    mkdir /config/usb_gadget/g1/functions/mtp.gs0
+
+on property:sys.usb.config=mtp,adb && property:sys.usb.configfs=1
+    start adbd
+
+on property:sys.usb.config=mtp,adb && property:sys.usb.ffs.ready=1 && property:sys.usb.configfs=1
+    # The ROM's IDs (Samsung 04E8:6860, MTP + adb): Windows binds its MTP driver to this
+    # composite. Under TWRP's adb IDs (18D1:D001) it only ever sets up the adb interface.
+    write /config/usb_gadget/g1/idVendor 0x04E8
+    write /config/usb_gadget/g1/idProduct 0x6860
+    write /config/usb_gadget/g1/configs/b.1/strings/0x409/configuration "mtp_adb"
+    symlink /config/usb_gadget/g1/functions/mtp.gs0 /config/usb_gadget/g1/configs/b.1/f1
+    symlink /config/usb_gadget/g1/functions/ffs.adb /config/usb_gadget/g1/configs/b.1/f2
+    write /config/usb_gadget/g1/UDC ${sys.usb.controller}
+    setprop sys.usb.state ${sys.usb.config}
+
+# The stock none rule unbinds and removes only f1; drop f2 too and restore TWRP's vendor
+# ID, so the stock adb rule (and sideload/fastboot) start from a clean config.
+on property:sys.usb.config=none && property:sys.usb.configfs=1
+    rm /config/usb_gadget/g1/configs/b.1/f2
+    write /config/usb_gadget/g1/idVendor 0x${ro.recovery.usb.vid}
